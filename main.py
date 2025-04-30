@@ -130,7 +130,7 @@ def main():
                                     game.current_player = 1 - game.current_player  # Cambio de turno siempre en PVP
                                     print(f"🔄 Turno de: {game.players.names[game.current_player]}")
                                 else:
-                                    print("🎉 ¡Jugador humano gana!")
+                                    print(f"🎉 ¡{game.players.names[game.current_player]} gana!")
                             else:
                                 print("❌ Movimiento inválido")
 
