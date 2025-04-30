@@ -407,9 +407,10 @@ def show_result(screen, winner_name, color):
     screen.blit(text, text_rect)
     
     buttons = [
-        Button(screen.get_width()/2 - 150, screen.get_height()/2, 300, 50, "Reintentar", "retry"),
-        Button(screen.get_width()/2 - 150, screen.get_height()/2 + 70, 300, 50, "Menú Principal", "menu"),
-        Button(screen.get_width()/2 - 150, screen.get_height()/2 + 140, 300, 50, "Salir", "exit")
+        Button(screen.get_width()/2 - 150, screen.get_height()/2, 300, 50, "Ver Estado Final", 'view_final'),
+        Button(screen.get_width()/2 - 150, screen.get_height()/2 + 70, 300, 50, "Reintentar", "retry"),
+        Button(screen.get_width()/2 - 150, screen.get_height()/2 + 140, 300, 50, "Menú Principal", "menu"),
+        Button(screen.get_width()/2 - 150, screen.get_height()/2 + 210, 300, 50, "Salir", "exit")
     ]
     
     while True:

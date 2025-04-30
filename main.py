@@ -267,17 +267,46 @@ def main():
             if game.winner is not None:
                 winner_name = game.players.names[game.winner]
                 RECORDS.save_record(winner_name, game.players.names[1 - game.winner])
-                result = show_result(screen, winner_name, COLORS[game.players.colors[game.winner]])
+                result = None
                 
+                while True:
+                    result = show_result(screen, winner_name, COLORS[game.players.colors[game.winner]])
+                    
+                    if result == 'view_final':
+                        # Mostrar estado final con botón Volver
+                        volver_btn = Button(WIDTH//2 - 80, HEIGHT - 100, 160, 40, "Volver", 'volver')
+                        viewing_final = True
+                        
+                        while viewing_final:
+                            mouse_pos = pygame.mouse.get_pos()
+                            
+                            # Dibujar
+                            screen.fill(BG_COLOR)
+                            draw_board(screen, game, HEX_RADIUS)
+                            volver_btn.draw(screen)
+                            
+                            # Eventos
+                            for event in pygame.event.get():
+                                if event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    sys.exit()
+                                action = volver_btn.handle_click(event)
+                                if action == 'volver':
+                                    viewing_final = False
+                            
+                            pygame.display.flip()
+                            clock.tick(60)
+                    else:
+                        break  # Salir si la opción no es view_final
+
+                # Manejar resultado después de salir del bucle
                 if result == 'retry':
                     # Reiniciar juego con misma configuración
                     if game_mode == "PVP":
                         game = HexGame(GRID_SIZE, game_mode, players)
                         game.current_player = 0
                     else:
-                        # Reconstruir configuración inicial
                         game = HexGame(GRID_SIZE, game_mode, players)
-                        
                         if game_mode == "PVAI":
                             game.players.names[ai_player] = ai_class.NAME
                             game.ai = ai_class(ai_player)
@@ -288,9 +317,9 @@ def main():
                             game.players.names[0] = ia_config['ai_p0'].NAME
                             game.players.names[1] = ia_config['ai_p1'].NAME
                             game.current_player = 0
-
                 elif result == 'menu':
                     in_menu = True
+                    game = None
                 elif result == 'exit':
                     pygame.quit()
                     sys.exit()
