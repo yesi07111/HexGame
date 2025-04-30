@@ -1,5 +1,8 @@
+import ctypes
 import math
+import os
 import sys
+import time
 import pygame
 from game.configs import *
 
@@ -496,7 +499,11 @@ def show_menu(screen):
                 for btn in game_buttons:
                     action = btn.handle_click(event)
                     if action == "RECORDS":
-                        show_records(screen)
+                        try:
+                            action = show_records(screen)
+                            continue
+                        except:
+                            pass
                     elif action == "EXIT":
                         pygame.quit()
                         sys.exit()
@@ -533,55 +540,89 @@ def show_menu(screen):
         pygame.display.flip()
 
 def show_records(screen):
-    screen_rect = screen.get_rect()
-    btn_back = Button(screen_rect.centerx - 100, screen_rect.height - 100, 200, 50, "Volver al Menú", "MENU")
-    
-    while True:
-        mouse_pos = pygame.mouse.get_pos()
-        btn_back.update_hover(mouse_pos)  # Actualizar hover cada frame
-
-        # Manejo de eventos
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+    try:
+        screen_rect = screen.get_rect()
+        btn_back = Button(screen_rect.centerx - 100, screen_rect.height - 100, 200, 50, "Volver al Menú", "MENU")
+        
+        running = True
+        while running:
+            # Manejo completo de eventos
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                
+                # Manejar todos los tipos de eventos del mouse
+                if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION]:
+                    action = btn_back.handle_click(event)
+                    if action == "MENU":
+                        running = False 
+                        reset_game() 
             
-            # Manejar TODOS los eventos relevantes
-            if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION]:
-                action = btn_back.handle_click(event)
-                if action == "MENU":
-                    return
-
-        # Dibujado completo
+            # Actualizar estado del botón
+            mouse_pos = pygame.mouse.get_pos()
+            btn_back.update_hover(mouse_pos)
+            
+            # Dibujado completo
+            screen.fill(BG_COLOR)
+            
+            # Título
+            title_font = pygame.font.SysFont('Arial', 48, bold=True)
+            title = title_font.render("HISTORIAL DE PARTIDAS", True, (255,255,255))
+            title_rect = title.get_rect(center=(screen_rect.centerx, 50))
+            screen.blit(title, title_rect)
+            
+            # Registros
+            font = pygame.font.SysFont('Arial', 24)
+            y = title_rect.bottom + 20
+            try:
+                with open("records.txt", "r") as f:
+                    for line in f:
+                            parts = line.strip().split(';')
+                            if len(parts) == 3:
+                                players, wins_j1, wins_j2 = parts
+                                player1, player2 = players.split(',')
+                                text = font.render(
+                                    f"{player1} vs {player2}: {wins_j1} - {wins_j2}", 
+                                    True, (255,255,255)
+                                )
+                                screen.blit(text, (screen_rect.centerx - text.get_width()//2, y))
+                                y += 40
+            except FileNotFoundError:
+                error_text = font.render("No hay registros de partidas aún", True, (255,255,255))
+                error_rect = error_text.get_rect(center=(screen_rect.centerx, screen_rect.centery))
+                screen.blit(error_text, error_rect)
+            
+            # Dibujar botón
+            btn_back.draw(screen)
+            
+            pygame.display.flip()
+            pygame.time.Clock().tick(30)  # Reducir carga de CPU
+        
+        # Al salir del bucle, forzar redibujado completo del menú principal
         screen.fill(BG_COLOR)
-        
-        # Título
-        title_font = pygame.font.SysFont('Arial', 48, bold=True)
-        title = title_font.render("HISTORIAL DE PARTIDAS", True, (255,255,255))
-        screen.blit(title, (screen_rect.centerx - title.get_width()//2, 50))
-        
-        # Registros
-        font = pygame.font.SysFont('Arial', 24)
-        y = 150
-        try:
-            with open("records.txt", "r") as f:
-                for line in f:
-                    parts = line.strip().split(';')
-                    if len(parts) == 3:
-                        players, wins_j1, wins_j2 = parts
-                        player1, player2 = players.split(',')
-                        text = font.render(
-                            f"{player1} vs {player2}: {wins_j1} - {wins_j2}", 
-                            True, (255,255,255)
-                        )
-                        screen.blit(text, (screen_rect.centerx - text.get_width()//2, y))
-                        y += 40
-        except FileNotFoundError:
-            # Posicionamiento vertical mejorado
-            error_text = font.render("No hay registros de partidas aún", True, (255,255,255))
-            screen.blit(error_text, (screen_rect.centerx - error_text.get_width()//2, screen_rect.centery - 50))
-
-        # Botón siempre visible
-        btn_back.draw(screen)
-        
         pygame.display.flip()
+        return
+    except Exception as e:
+        print(f"Error en show_records: {str(e)}")
+        pygame.quit()
+        reset_game()
+        
+def reset_game():
+    time.sleep(0.5)
+    focus_window()
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
+
+def focus_window():
+    """Fuerza el enfoque de la ventana en diferentes SO"""
+    try:
+        if sys.platform == 'win32':
+            ctypes.windll.user32.ShowWindow(pygame.display.get_wm_info()['window'], 9)  # SW_RESTORE
+            ctypes.windll.user32.SetForegroundWindow(pygame.display.get_wm_info()['window'])
+        elif sys.platform == 'darwin':
+            os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+        else:  # Linux
+            os.system('wmctrl -a "Hex Game - IA Project"')
+    except Exception as e:
+        print(f"Error enfocando ventana: {e}")
