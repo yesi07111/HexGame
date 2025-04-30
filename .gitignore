@@ -2,4 +2,4 @@
 __pycache__/
 .vscode
 # Ignorar todos los archivos .txt
-*.txt
+records.txt
