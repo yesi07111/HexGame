@@ -533,47 +533,55 @@ def show_menu(screen):
         pygame.display.flip()
 
 def show_records(screen):
-    screen.fill(BG_COLOR)
-    font = pygame.font.SysFont('Arial', 24)
-    y = 150
     screen_rect = screen.get_rect()
-    
-    # Título
-    title_font = pygame.font.SysFont('Arial', 48, bold=True)
-    title = title_font.render("HISTORIAL DE PARTIDAS", True, (255,255,255))
-    screen.blit(title, (screen_rect.centerx - title.get_width()//2, 50))
-    
-    # Leer registros
-    try:
-        with open("records.txt", "r") as f:
-            for line in f:
-                parts = line.strip().split(';')
-                if len(parts) == 3:
-                    players, wins_j1, wins_j2 = parts
-                    player1, player2 = players.split(',')
-                    text = font.render(
-                        f"{player1} vs {player2}: {wins_j1} - {wins_j2}", 
-                        True, (255,255,255)  # Corregido paréntesis faltante
-                    )
-                    screen.blit(text, (screen_rect.centerx - text.get_width()//2, y))
-                    y += 40
-    except FileNotFoundError:
-        text = font.render("No hay registros de partidas aún", True, (255,255,255))
-        screen.blit(text, (screen_rect.centerx - text.get_width()//2, y))
-    
-    # Botón de regreso
     btn_back = Button(screen_rect.centerx - 100, screen_rect.height - 100, 200, 50, "Volver al Menú", "MENU")
     
     while True:
+        mouse_pos = pygame.mouse.get_pos()
+        btn_back.update_hover(mouse_pos)  # Actualizar hover cada frame
+
+        # Manejo de eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             
-            action = btn_back.handle_click(event)
-            if action == "MENU":  # Verificar la acción específica
-                return
+            # Manejar TODOS los eventos relevantes
+            if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION]:
+                action = btn_back.handle_click(event)
+                if action == "MENU":
+                    return
 
+        # Dibujado completo
+        screen.fill(BG_COLOR)
+        
+        # Título
+        title_font = pygame.font.SysFont('Arial', 48, bold=True)
+        title = title_font.render("HISTORIAL DE PARTIDAS", True, (255,255,255))
+        screen.blit(title, (screen_rect.centerx - title.get_width()//2, 50))
+        
+        # Registros
+        font = pygame.font.SysFont('Arial', 24)
+        y = 150
+        try:
+            with open("records.txt", "r") as f:
+                for line in f:
+                    parts = line.strip().split(';')
+                    if len(parts) == 3:
+                        players, wins_j1, wins_j2 = parts
+                        player1, player2 = players.split(',')
+                        text = font.render(
+                            f"{player1} vs {player2}: {wins_j1} - {wins_j2}", 
+                            True, (255,255,255)
+                        )
+                        screen.blit(text, (screen_rect.centerx - text.get_width()//2, y))
+                        y += 40
+        except FileNotFoundError:
+            # Posicionamiento vertical mejorado
+            error_text = font.render("No hay registros de partidas aún", True, (255,255,255))
+            screen.blit(error_text, (screen_rect.centerx - error_text.get_width()//2, screen_rect.centery - 50))
+
+        # Botón siempre visible
         btn_back.draw(screen)
+        
         pygame.display.flip()
-
