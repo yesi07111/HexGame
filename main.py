@@ -37,8 +37,12 @@ def main():
                     ia_config = show_ia_config(screen)
                 elif game_mode == "AIVAI":
                     ia_config = show_ai_vs_ai_config(screen)  # Nueva función
+                elif game_mode == "PVP":  # Nuevo caso para PVP
+                    HUMAN_PLAYER = "PVP"  # Bandera especial
+                    game = HexGame(GRID_SIZE, game_mode, players)
+                    game.current_player = 0  # Iniciar con jugador 0
                     
-                if ia_config is None:  # Si se cancela cualquier configuración
+                if ia_config is None and game_mode != "PVP":  # Si se cancela cualquier configuración
                     in_menu = True
                     continue
                 
@@ -72,6 +76,11 @@ def main():
                     game.players.names[1] = ia_config['ai_p1'].NAME
                     game.current_player = 0  # Empezar con jugador 0
                     HUMAN_PLAYER = -1  # Ningún jugador humano
+                
+                elif game_mode == "PVP":  # Nuevo caso para PVP
+                    HUMAN_PLAYER = "PVP"  # Bandera especial
+                    game = HexGame(GRID_SIZE, game_mode, players)
+                    game.current_player = 0  # Iniciar con jugador 0
                 
                 in_menu = False
             except Exception as e:
@@ -107,10 +116,8 @@ def main():
                         game = None
                     
             # Manejar clics humanos SOLO en modos PVP y PVAI
-            if game and not game.winner and game.game_mode in ["PVP", "PVAI"] and HUMAN_PLAYER == game.current_player:
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    # Verificar si es turno humano
-                    if game.players.names[game.current_player] != "Mr. Tie":
+            if game and not game.winner and (game.game_mode == "PVP" or (game.game_mode == "PVAI" and HUMAN_PLAYER == game.current_player)):
+                    if event.type == pygame.MOUSEBUTTONDOWN:
                         x, y = event.pos
                         r, q = pixel_to_axial(x, y, HEX_RADIUS)
                         
@@ -120,9 +127,7 @@ def main():
                                 game.check_win(game.current_player)
                                 
                                 if game.winner is None:
-                                    # Cambiar turno solo si es humano
-                                    game.ai_thinking = False
-                                    game.current_player = 1 - game.current_player
+                                    game.current_player = 1 - game.current_player  # Cambio de turno siempre en PVP
                                     print(f"🔄 Turno de: {game.players.names[game.current_player]}")
                                 else:
                                     print("🎉 ¡Jugador humano gana!")
@@ -230,7 +235,7 @@ def main():
                         print("❌ Error IA: Movimiento inválido")
                 
                 # Resetear estado IA
-                if game.game_mode == "AIVAI":
+                if game.game_mode == "AIVAI" or game.game_mode == "PVAI":
                     game.ai_thinking = False
                 del game.ai_animating
                 del game.ai_target
@@ -265,7 +270,35 @@ def main():
                 result = show_result(screen, winner_name, COLORS[game.players.colors[game.winner]])
                 
                 if result == 'retry':
-                    game = HexGame(GRID_SIZE, game_mode, game.players)
+                    if game_mode == "PVAI":
+                        # Modificar para usar nombre de IA seleccionada
+                        order_option = ia_config['order']
+                        ai_class = AI_REGISTRY[ia_config['ia_type']]  # Obtener clase de IA
+                        
+                        ai_player = 1 if order_option == 0 else 0
+                        human_player = 1 - ai_player
+                        HUMAN_PLAYER = human_player
+                        
+                        game.players.names[ai_player] = ai_class.NAME  # Usar nombre de la clase
+                        game.ai = ai_class(ai_player)  # Crear instancia
+                        game.current_player = human_player if order_option == 0 else ai_player
+                        
+                    elif game_mode == "AIVAI":
+                        # Configurar ambas IAs
+                        game.ai = ia_config['ai_p1'](1)  # IA para jugador 1
+                        game.ai2 = ia_config['ai_p0'](0)  # IA para jugador 0
+                        
+                        # Actualizar nombres
+                        game.players.names[0] = ia_config['ai_p0'].NAME
+                        game.players.names[1] = ia_config['ai_p1'].NAME
+                        game.current_player = 0  # Empezar con jugador 0
+                        HUMAN_PLAYER = -1  # Ningún jugador humano
+                    
+                    elif game_mode == "PVP":  # Nuevo caso para PVP
+                        HUMAN_PLAYER = "PVP"  # Bandera especial
+                        game = HexGame(GRID_SIZE, game_mode, players)
+                        game.current_player = 0  # Iniciar con jugador 0
+
                 elif result == 'menu':
                     in_menu = True
                 elif result == 'exit':
@@ -274,6 +307,7 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
+
 
 if __name__ == "__main__":
     main()
