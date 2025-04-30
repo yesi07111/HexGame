@@ -270,34 +270,24 @@ def main():
                 result = show_result(screen, winner_name, COLORS[game.players.colors[game.winner]])
                 
                 if result == 'retry':
-                    if game_mode == "PVAI":
-                        # Modificar para usar nombre de IA seleccionada
-                        order_option = ia_config['order']
-                        ai_class = AI_REGISTRY[ia_config['ia_type']]  # Obtener clase de IA
-                        
-                        ai_player = 1 if order_option == 0 else 0
-                        human_player = 1 - ai_player
-                        HUMAN_PLAYER = human_player
-                        
-                        game.players.names[ai_player] = ai_class.NAME  # Usar nombre de la clase
-                        game.ai = ai_class(ai_player)  # Crear instancia
-                        game.current_player = human_player if order_option == 0 else ai_player
-                        
-                    elif game_mode == "AIVAI":
-                        # Configurar ambas IAs
-                        game.ai = ia_config['ai_p1'](1)  # IA para jugador 1
-                        game.ai2 = ia_config['ai_p0'](0)  # IA para jugador 0
-                        
-                        # Actualizar nombres
-                        game.players.names[0] = ia_config['ai_p0'].NAME
-                        game.players.names[1] = ia_config['ai_p1'].NAME
-                        game.current_player = 0  # Empezar con jugador 0
-                        HUMAN_PLAYER = -1  # Ningún jugador humano
-                    
-                    elif game_mode == "PVP":  # Nuevo caso para PVP
-                        HUMAN_PLAYER = "PVP"  # Bandera especial
+                    # Reiniciar juego con misma configuración
+                    if game_mode == "PVP":
                         game = HexGame(GRID_SIZE, game_mode, players)
-                        game.current_player = 0  # Iniciar con jugador 0
+                        game.current_player = 0
+                    else:
+                        # Reconstruir configuración inicial
+                        game = HexGame(GRID_SIZE, game_mode, players)
+                        
+                        if game_mode == "PVAI":
+                            game.players.names[ai_player] = ai_class.NAME
+                            game.ai = ai_class(ai_player)
+                            game.current_player = human_player if order_option == 0 else ai_player
+                        elif game_mode == "AIVAI":
+                            game.ai = ia_config['ai_p1'](1)
+                            game.ai2 = ia_config['ai_p0'](0)
+                            game.players.names[0] = ia_config['ai_p0'].NAME
+                            game.players.names[1] = ia_config['ai_p1'].NAME
+                            game.current_player = 0
 
                 elif result == 'menu':
                     in_menu = True
